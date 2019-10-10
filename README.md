@@ -14,7 +14,7 @@ R Packages
 - reshape (for building a matrix)
 - proxy (for similarity measurements)
 
-**How to run**
+## How to run
 ```
 source("main.R")
 ```
