@@ -21,34 +21,38 @@ GetValidEval <- function(test.y) {
   # Set the training set for testing
   train.y <- year.list[!year.list==test.y]
   
-  cat(c("valid.train.years", valid.train.y, "valid.test.year", valid.test.y, "\n"))
-  cat(c("eval.train.years", train.y, "eval.test.year", test.y, "\n"))
+  cat(c("For valiation,\n"))
+  cat(c("\ttrain.years:", valid.train.y, "\n\ttest.year:", valid.test.y, "\n"))
+  cat(c("For evaluation,\n"))
+  cat(c("\ttrain.years:", train.y, "\n\ttest.year:", test.y, "\n\n"))
   
-  cat(c("Building validation datasets... \n"))
+  cat(c("Generating validation datasets ... \n"))
   valid.set <- GetTrainTest(valid.train.y, valid.test.y)
-  cat(c("Building evaluation datasets... \n"))
+  cat(c("Generating evaluation datasets ... \n"))
   eval.set <- GetTrainTest(train.y, test.y)
   return(list(valid=valid.set, eval=eval.set))
 }
 
 GetTrainTest <- function(train.years, test.year) {
-  # Get int data  
+  # Get interaction and confidence (based on flower abundance) data  
   train.data <- AvailFlwMat(train.years)
   test.data <- AvailFlwMat(test.year)
       
-  # Get train matrix
-  C.train <- train.data$C.data
-  A.train.mat <- train.data$abund.mat    
-  like.train <- train.data$like.mat
+  # Get train datasets
+  C.train <- train.data$C.data # interaction frequencies
+  A.train.mat <- train.data$abund.mat # flower abundance over time and space  
+  like.train <- train.data$like.mat # 
   dislike.train <- train.data$dislike.mat
   abund.train <- train.data$abund.mat       
   flw.occur.train <- train.data$flw.occur 
   A.train.vec <- GetFlwAbundGivenPlants(train.data$flw.data, colnames(C.train), 
-                                        FALSE) 
+                                        FALSE) # avergaged flower abundance
+  
+  # Remove noisy data 
   remove.idx <- which(A.train.vec==0)
   if(length(remove.idx)>0) {
-    print("Plants that are not in flower survey although it has interactions")
-    print(colnames(C.train)[remove.idx])
+    #print("Plants that are not in flower survey although it has interactions")
+    #print(colnames(C.train)[remove.idx])
     C.train <- C.train[ , -remove.idx]
     A.train.vec <- as.matrix(A.train.vec[-remove.idx, ])
     A.train.mat <- A.train.mat[ , -remove.idx]
@@ -58,14 +62,14 @@ GetTrainTest <- function(train.years, test.year) {
     flw.occur.train <- flw.occur.train[-remove.idx]
   }
 
-  # Get test matrix
+  # Get test datasets
   C.test <- test.data$C.data
   like.test <- test.data$like.mat
   dislike.test <- test.data$dislike.mat
   abund.test <- test.data$abund.mat 
   flw.occur.test <- test.data$flw.occur 
  
-  # Reduce train & test matrix with common species
+  # Reduce train & test matrix with "common" species
   common.test.mats <- GetCommonMatrics(C.train, C.test, like.test, dislike.test, 
                                        abund.test, flw.occur.test)  
   C.train.common <- common.test.mats[[1]]    
@@ -78,6 +82,8 @@ GetTrainTest <- function(train.years, test.year) {
     
   A.test.vec <- GetFlwAbundGivenPlants(test.data$flw.data, 
                                        colnames(C.test.common), FALSE) 
+  
+  # Remove noisy data 
   remove.idx <- which(A.test.vec==0)
   if(length(remove.idx)>0) {
     A.test.vec <- as.matrix(A.test.vec[-remove.idx, ])

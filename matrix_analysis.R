@@ -27,8 +27,8 @@ BuildPPIMat <- function(data, binary) {
   }
 
   int.mat <- t(int.mat) # format of pollinators x plants
-  cat(c("Matrix size:", dim(int.mat), "\n"))
-  cat(c("Matrix density:", Connectance(int.mat), "\n"))
+  #cat(c("Matrix size:", dim(int.mat), "\n"))
+  #cat(c("Matrix density:", Connectance(int.mat), "\n"))
   return(int.mat)
 }
 
