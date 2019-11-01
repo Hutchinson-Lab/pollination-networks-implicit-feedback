@@ -88,7 +88,7 @@ Evaluation <- function(test.y) {
   if(file.exists(filename)){
     mydata <- readRDS(filename)
   } else {
-    mydata = SimulateDataset(test.y)
+    mydata = SimulateDataset(test.y) 
     version.list = c("Sim")
   }
   
@@ -105,6 +105,10 @@ Evaluation <- function(test.y) {
        # PARAM LOAD
        params <- LoadTunedParam(ver, target)
        opt.params <- GetTunedParamsByYear(params, test.y)
+       if (dim(opt.params)[1] > 1) {
+         print("Please remove previous param files")
+         stop()
+       }
        res <- EvaluateTestset(mydata$eval, opt.params, ver, target, test.y,
                               plot.type)
        # RESULT SAVE
@@ -283,42 +287,11 @@ EvaluateOneYear <- function(test.year) {
   }
 }
 
-SimulateDataset <- function(test.y) {
-  # year configuration
-  if(test.y == year.list[1]){
-    valid.test.y <- tail(year.list, n=1)
-  } else {
-    valid.test.y <- test.y - 1
-  }  
-  # Set the training set for validation
-  valid.train.y <- year.list[!year.list== valid.test.y & !year.list== test.y]
-  # Set the training set for testing
-  train.y <- year.list[!year.list==test.y]
-  valid.Y = list(train=valid.train.y, test=valid.test.y)
-  
-  # simulating datasets
-  # For validation,
-  valid.C = list(train=matrix(sample(15,100,T),10, dimnames = list(1:10, 1:10)), 
-    test=matrix(sample(15,25,T),5, dimnames = list(seq(1,10,2), seq(1,10,2))))
-  valid.N = list(test=matrix(sample(15,25,T),5, dimnames = list(seq(1,10,2), seq(1,10,2))))
-  valid.A = list(train=matrix(sample(15,100,T),10, dimnames = list(1:10, 1:10)), 
-    test=matrix(sample(15,25,T),5, dimnames = list(seq(1,10,2), seq(1,10,2))))
-  valid.R = list(train=matrix(sample(15,100,T),10, dimnames = list(1:10, 1:10)))
-  valid.D = list(train=matrix(sample(15,100,T),10, dimnames = list(1:10, 1:10)))
-  myValid = list(Y=valid.Y, C=valid.C, N=valid.N, A=valid.A, R=valid.R, D=valid.D)
-  
-  # For evaluation,
-  eval.Y = list(train=train.y, test=test.y)
-  eval.C = list(train=matrix(sample(15,400,T),20, dimnames = list(1:20, 1:20)), 
-    test=matrix(sample(15,100,T),10, dimnames = list(seq(1,20,2), seq(1,20,2))))
-  eval.N = list(test=matrix(sample(15,100,T),10, dimnames = list(seq(1,20,2), seq(1,20,2))))
-  eval.A = list(train=matrix(sample(15,400,T),20, dimnames = list(1:20, 1:20)), 
-    test=matrix(sample(15,100,T),10, dimnames = list(seq(1,20,2), seq(1,20,2))))
-  eval.R = list(train=matrix(sample(15,400,T),20, dimnames = list(1:20, 1:20)))
-  eval.D = list(train=matrix(sample(15,400,T),20, dimnames = list(1:20, 1:20)))
-  myEval= list(Y=eval.Y, C=eval.C, N=eval.N, A=eval.A, R=eval.R, D=eval.D)
-
-  mydata = list(valid=myValid, eval=myEval)
-  
-  return(mydata)
+SimulateOneYear <- function(test.year) {
+  if (test.year %in% c(11,12,13,14,15)) {
+    cat(c("test.year", test.year, "\n"))
+    #SimulateDataset(test.year) # TODO
+    Validation(test.year)
+    Evaluation(test.year)
+  }
 }
