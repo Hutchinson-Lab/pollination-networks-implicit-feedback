@@ -31,6 +31,8 @@ PRCurve <- function(LB, Pop, Avail, ItemNN, UserNN, MF, IFMF, IFMF2, y, t, v) {
     atype <- "vec"
   } else if(v == 4 | v == 2) {
     atype <- "mat"
+  } else {
+    atype <- "sim"
   }  
   title(paste(t, " interactions; A.", atype, sep=""), cex.main=mycex+1.7)
 }

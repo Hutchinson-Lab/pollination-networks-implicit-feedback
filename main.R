@@ -38,7 +38,7 @@ model.list <- c("LB", "Pop", "Avail", "ItemNN", "UserNN", "MF", "IFMF", "IFMF2")
 
 # 1. Generate training and test sets
 GenerateDataset <- function(test.y) {
-  cat("Train/Test sets generation...", test.y, "\n")
+  cat("Generating train/test sets for the test year", test.y, " ...\n")
   mydata <- GetValidEval(test.y)
   # DATA SAVE
   if (!dir.exists('RData')) {
@@ -54,7 +54,14 @@ Validation <- function(test.y) {
   }
   cat("Cross Valdiation...", test.y, "\n")
   # DATA LOAD
-  mydata <- readRDS(paste("RData/mydata_", test.y, ".RData", sep=""))
+  filename <- paste("RData/mydata_", test.y, ".RData", sep="")
+  if(file.exists(filename)){
+    mydata <- readRDS(paste("RData/mydata_", test.y, ".RData", sep=""))
+  } else {
+    mydata = SimulateDataset(test.y)
+    version.list = c("Sim")
+  }
+
   for(ver in version.list) {
     for(target in target.list) {
       df <- CrossValidation(mydata$valid, test.y, ver, target)
@@ -77,8 +84,14 @@ Evaluation <- function(test.y) {
   
   cat("Testing... test.y", test.y, "\n")
   # DATA LOAD
-  mydata <- readRDS(paste("RData/mydata_", test.y, ".RData", sep=""))
-
+  filename <- paste("RData/mydata_", test.y, ".RData", sep="")
+  if(file.exists(filename)){
+    mydata <- readRDS(filename)
+  } else {
+    mydata = SimulateDataset(test.y)
+    version.list = c("Sim")
+  }
+  
   attach(mtcars)
   x11(width=30, height=20, pointsize=20)
   png(paste("Results/PR_34_", test.y, ".png", sep=""),
@@ -112,43 +125,50 @@ Evaluation <- function(test.y) {
 EvaluateTestset <- function(mydata, opt.params, ver, target, test.y, plot.type) {
   C <- mydata$C
   N <- mydata$N
-  Avec <- mydata$Avec
-  Amat <- mydata$Amat
-  Like <- mydata$Like
-  Dislike <- mydata$Dislike
-  Occur <- mydata$Occur
   P <- (C$train>0)*1
   nPolls <- nrow(C$train)
   nPlant <- ncol(C$train)
 
-  if(ver == 1) { # AV-AV
-    R <- C$train
-    D <- t(matrix(rep(Avec$train, nPolls), ncol=nPolls))
-    Atest <- t(matrix(rep(Avec$test,nrow(C$test)),ncol=nrow(C$test)))
-  } else if(ver == 2) { # AM-AM
-    R <- C$train
-    D <- Amat$train
-    Atest <- Amat$test
-  } else if(ver == 3) { # OV-OV
-    R <- C$train
-    D <- t(matrix(rep(Occur$train, nPolls), ncol=nPolls))
-    Atest <- t(matrix(rep(Occur$test,nrow(C$test)),ncol=nrow(C$test)))
-  } else if(ver == 4) { # OM-OM
-    R <- Like$train
-    D <- Dislike$train
-    Atest <- Like$test + Dislike$test
-  } else if(ver == 5) { # AM-AV
-    R <- C$train
-    D <- Amat$train
-    Atest <- t(matrix(rep(Avec$test,nrow(C$test)),ncol=nrow(C$test)))
-  } else if(ver == 6) { # OM-AV
-    R <- Like$train
-    D <- Dislike$train
-    Atest <- t(matrix(rep(Avec$test,nrow(C$test)),ncol=nrow(C$test)))
-  } else if(ver == 7) { # OM-AM
-    R <- Like$train
-    D <- Dislike$train
-    Atest <- Amat$test
+  if(is.null(mydata$A)) {
+    Avec <- mydata$Avec
+    Amat <- mydata$Amat
+    Like <- mydata$Like
+    Dislike <- mydata$Dislike
+    Occur <- mydata$Occur 
+    
+    if(ver == 1) { # AV-AV
+      R <- C$train
+      D <- t(matrix(rep(Avec$train, nPolls), ncol=nPolls))
+      Atest <- t(matrix(rep(Avec$test,nrow(C$test)),ncol=nrow(C$test)))
+    } else if(ver == 2) { # AM-AM
+      R <- C$train
+      D <- Amat$train
+      Atest <- Amat$test
+    } else if(ver == 3) { # OV-OV
+      R <- C$train
+      D <- t(matrix(rep(Occur$train, nPolls), ncol=nPolls))
+      Atest <- t(matrix(rep(Occur$test,nrow(C$test)),ncol=nrow(C$test)))
+    } else if(ver == 4) { # OM-OM
+      R <- Like$train
+      D <- Dislike$train
+      Atest <- Like$test + Dislike$test
+    } else if(ver == 5) { # AM-AV
+      R <- C$train
+      D <- Amat$train
+      Atest <- t(matrix(rep(Avec$test,nrow(C$test)),ncol=nrow(C$test)))
+    } else if(ver == 6) { # OM-AV
+      R <- Like$train
+      D <- Dislike$train
+      Atest <- t(matrix(rep(Avec$test,nrow(C$test)),ncol=nrow(C$test)))
+    } else if(ver == 7) { # OM-AM
+      R <- Like$train
+      D <- Dislike$train
+      Atest <- Amat$test
+    }
+  } else {
+    R <- mydata$R$train
+    D <- mydata$D$train
+    Atest <- mydata$A$test
   }
 
   # LB
@@ -261,4 +281,44 @@ EvaluateOneYear <- function(test.year) {
     Validation(test.year)
     Evaluation(test.year)
   }
+}
+
+SimulateDataset <- function(test.y) {
+  # year configuration
+  if(test.y == year.list[1]){
+    valid.test.y <- tail(year.list, n=1)
+  } else {
+    valid.test.y <- test.y - 1
+  }  
+  # Set the training set for validation
+  valid.train.y <- year.list[!year.list== valid.test.y & !year.list== test.y]
+  # Set the training set for testing
+  train.y <- year.list[!year.list==test.y]
+  valid.Y = list(train=valid.train.y, test=valid.test.y)
+  
+  # simulating datasets
+  # For validation,
+  valid.C = list(train=matrix(sample(15,100,T),10, dimnames = list(1:10, 1:10)), 
+    test=matrix(sample(15,25,T),5, dimnames = list(seq(1,10,2), seq(1,10,2))))
+  valid.N = list(test=matrix(sample(15,25,T),5, dimnames = list(seq(1,10,2), seq(1,10,2))))
+  valid.A = list(train=matrix(sample(15,100,T),10, dimnames = list(1:10, 1:10)), 
+    test=matrix(sample(15,25,T),5, dimnames = list(seq(1,10,2), seq(1,10,2))))
+  valid.R = list(train=matrix(sample(15,100,T),10, dimnames = list(1:10, 1:10)))
+  valid.D = list(train=matrix(sample(15,100,T),10, dimnames = list(1:10, 1:10)))
+  myValid = list(Y=valid.Y, C=valid.C, N=valid.N, A=valid.A, R=valid.R, D=valid.D)
+  
+  # For evaluation,
+  eval.Y = list(train=train.y, test=test.y)
+  eval.C = list(train=matrix(sample(15,400,T),20, dimnames = list(1:20, 1:20)), 
+    test=matrix(sample(15,100,T),10, dimnames = list(seq(1,20,2), seq(1,20,2))))
+  eval.N = list(test=matrix(sample(15,100,T),10, dimnames = list(seq(1,20,2), seq(1,20,2))))
+  eval.A = list(train=matrix(sample(15,400,T),20, dimnames = list(1:20, 1:20)), 
+    test=matrix(sample(15,100,T),10, dimnames = list(seq(1,20,2), seq(1,20,2))))
+  eval.R = list(train=matrix(sample(15,400,T),20, dimnames = list(1:20, 1:20)))
+  eval.D = list(train=matrix(sample(15,400,T),20, dimnames = list(1:20, 1:20)))
+  myEval= list(Y=eval.Y, C=eval.C, N=eval.N, A=eval.A, R=eval.R, D=eval.D)
+
+  mydata = list(valid=myValid, eval=myEval)
+  
+  return(mydata)
 }

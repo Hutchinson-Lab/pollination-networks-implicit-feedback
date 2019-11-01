@@ -44,37 +44,42 @@ CrossValidation <- function(mydata, test.y, ver, target) {
 TunningParameters <- function(mydata, ver, target, test.y) {
   cat("MF")
   MF <- MF_Tuning(mydata, k.list, lambda.list, ver, target)
-  cat("IFMF")
+  cat("\nIFMF")
   IFMF <- IFMF_Tuning(mydata, k.list, lambda.list, a.list, ver, target)
-  cat("IFMF2")
+  cat("\nIFMF2")
   IFMF2 <- IFMF2_Tuning(mydata, k.list, lambda.list, ver, target)
   return(list(MF=MF, IFMF=IFMF, IFMF2=IFMF2))
 }
 
 # Tunning lambda
-MF_Tuning <- function(mydata, k.list, lambda.list, ver, target) {
+MF_Tuning <- function(mydata, k.list, lambda.list, ver, target, myAvalid) {
   C <- mydata$C
   N <- mydata$N
-  Avec <- mydata$Avec
-  Amat <- mydata$Amat
-  Like <- mydata$Like
-  Dislike <- mydata$Dislike
-  Occur <- mydata$Occur
-  
-  if(ver == 1) { # AV-AV
-    Avalid <- t(matrix(rep(Avec$test,nrow(C$test)),ncol=nrow(C$test)))
-  } else if(ver == 2) { # AM-AM
-    Avalid <- Amat$test
-  } else if(ver == 3) { # OV-OV
-    Avalid <- t(matrix(rep(Occur$test,nrow(C$test)),ncol=nrow(C$test)))
-  } else if(ver == 4) { # OM-OM 
-    Avalid <- Like$test + Dislike$test
-  } else if(ver == 5) { # AM-AV
-    Avalid <- t(matrix(rep(Avec$test,nrow(C$test)),ncol=nrow(C$test)))
-  } else if(ver == 6) { # OM-AV 
-    Avalid <- t(matrix(rep(Avec$test,nrow(C$test)),ncol=nrow(C$test)))
-  } else if(ver == 7) { # OM-AM 
-    Avalid <- Amat$test
+
+  if(is.null(mydata$A)) {
+    Avec <- mydata$Avec
+    Amat <- mydata$Amat
+    Like <- mydata$Like
+    Dislike <- mydata$Dislike
+    Occur <- mydata$Occur
+    
+    if(ver == 1) { # AV-AV
+      Avalid <- t(matrix(rep(Avec$test,nrow(C$test)),ncol=nrow(C$test)))
+    } else if(ver == 2) { # AM-AM
+      Avalid <- Amat$test
+    } else if(ver == 3) { # OV-OV
+      Avalid <- t(matrix(rep(Occur$test,nrow(C$test)),ncol=nrow(C$test)))
+    } else if(ver == 4) { # OM-OM 
+      Avalid <- Like$test + Dislike$test
+    } else if(ver == 5) { # AM-AV
+      Avalid <- t(matrix(rep(Avec$test,nrow(C$test)),ncol=nrow(C$test)))
+    } else if(ver == 6) { # OM-AV 
+      Avalid <- t(matrix(rep(Avec$test,nrow(C$test)),ncol=nrow(C$test)))
+    } else if(ver == 7) { # OM-AM 
+      Avalid <- Amat$test
+    }
+  } else {
+    Avalid <- mydata$A$test
   }
 
   W0 <- matrix(1, nrow=nrow(C$train), ncol=ncol(C$train))
@@ -107,41 +112,47 @@ MF_Tuning <- function(mydata, k.list, lambda.list, ver, target) {
 IFMF_Tuning <- function(mydata, k.list, lambda.list, a.list, ver, target) {
   C <- mydata$C
   N <- mydata$N
-  Avec <- mydata$Avec 
-  Amat <- mydata$Amat
-  Like <- mydata$Like
-  Dislike <- mydata$Dislike
-  Occur <- mydata$Occur
   P <- (C$train>0)*1
 
-  if(ver == 1) { # AV-AV
-    R <- C$train
-    Avalid <- t(matrix(rep(Avec$test,nrow(C$test)),ncol=nrow(C$test)))
-  } else if(ver == 2) { # AM-AM
-    R <- C$train
-    Avalid <- Amat$test
-  } else if(ver == 3) { # OV-OV
-    R <- Like$train
-    Avalid <- t(matrix(rep(Occur$test,nrow(C$test)),ncol=nrow(C$test)))
-  } else if(ver == 4) { # OM-OM 
-    R <- Like$train
-    Avalid <- Like$test + Dislike$test
-  } else if(ver == 5) { # AM-AV
-    R <- C$train
-    Avalid <- t(matrix(rep(Avec$test,nrow(C$test)),ncol=nrow(C$test)))
-  } else if(ver == 6) { # OM-AV 
-    R <- Like$train
-    Avalid <- t(matrix(rep(Avec$test,nrow(C$test)),ncol=nrow(C$test)))
-  } else if(ver == 7) { # OM-AM 
-    R <- Like$train
-    Avalid <- Amat$test
+  if(is.null(mydata$A)) {
+    Avec <- mydata$Avec 
+    Amat <- mydata$Amat
+    Like <- mydata$Like
+    Dislike <- mydata$Dislike
+    Occur <- mydata$Occur
+  
+    if(ver == 1) { # AV-AV
+      R <- C$train
+      Avalid <- t(matrix(rep(Avec$test,nrow(C$test)),ncol=nrow(C$test)))
+    } else if(ver == 2) { # AM-AM
+      R <- C$train
+      Avalid <- Amat$test
+    } else if(ver == 3) { # OV-OV
+      R <- Like$train
+      Avalid <- t(matrix(rep(Occur$test,nrow(C$test)),ncol=nrow(C$test)))
+    } else if(ver == 4) { # OM-OM 
+      R <- Like$train
+      Avalid <- Like$test + Dislike$test
+    } else if(ver == 5) { # AM-AV
+      R <- C$train
+      Avalid <- t(matrix(rep(Avec$test,nrow(C$test)),ncol=nrow(C$test)))
+    } else if(ver == 6) { # OM-AV 
+      R <- Like$train
+      Avalid <- t(matrix(rep(Avec$test,nrow(C$test)),ncol=nrow(C$test)))
+    } else if(ver == 7) { # OM-AM 
+      R <- Like$train
+      Avalid <- Amat$test
+    } 
+  } else {
+    R <- mydata$R$train
+    Avalid <- mydata$A$test
   }
 
   # alpha tuning
   MPR.list <- array(0, c(length(a.list)))
   for(i in 1:length(a.list)){
-    cat(" a", i)
     alpha <- a.list[i]
+    cat(" a", alpha)
     W1 <- 1 + alpha * R
     W1 <- W1 / max(W1)
     pred.mat <- fitUV_C(C$train, W1, 0.02, 2)
@@ -179,46 +190,53 @@ IFMF_Tuning <- function(mydata, k.list, lambda.list, a.list, ver, target) {
 }
 
 # Tunning a1, b1, a2, b2, lambda
-IFMF2_Tuning <- function(mydata, k.list, lambda.list, ver, target) {
+IFMF2_Tuning <- function(mydata, k.list, lambda.list, ver, target, myAvalid) {
   C <- mydata$C
   N <- mydata$N
-  Avec <- mydata$Avec 
-  Amat <- mydata$Amat
-  Like <- mydata$Like
-  Dislike <- mydata$Dislike
-  Occur <- mydata$Occur
   P <- (C$train>0)*1
   nPolls <- nrow(C$train)
   nPlant <- ncol(C$train)
 
-  if(ver == 1) { # AV-AV
-    R <- C$train
-    D <- t(matrix(rep(Avec$train, nPolls), ncol=nPolls))
-    Avalid <- t(matrix(rep(Avec$test,nrow(C$test)),ncol=nrow(C$test)))
-  } else if(ver == 2) { # AM-AM
-    R <- C$train
-    D <- Amat$train
-    Avalid <- Amat$test
-  } else if(ver == 3) { # OV-OV
-    R <- Like$train
-    D <- t(matrix(rep(Occur$train, nPolls), ncol=nPolls)) 
-    Avalid <- t(matrix(rep(Occur$test,nrow(C$test)),ncol=nrow(C$test)))
-  } else if(ver == 4) { # OM-OM 
-    R <- Like$train
-    D <- Dislike$train
-    Avalid <- Like$test + Dislike$test
-  } else if(ver == 5) { # AM-AV
-    R <- C$train
-    D <- Amat$train
-    Avalid <- t(matrix(rep(Avec$test,nrow(C$test)),ncol=nrow(C$test)))
-  } else if(ver == 6) { # OM-AV 
-    R <- Like$train
-    D <- Dislike$train
-    Avalid <- t(matrix(rep(Avec$test,nrow(C$test)),ncol=nrow(C$test)))
-  } else if(ver == 7) { # OM-AM 
-    R <- Like$train
-    D <- Dislike$train
-    Avalid <- Amat$test
+  if(is.null(mydata$A)) {
+    Avec <- mydata$Avec 
+    Amat <- mydata$Amat
+    Like <- mydata$Like
+    Dislike <- mydata$Dislike
+    Occur <- mydata$Occur
+  
+    if(ver == 1) { # AV-AV
+      R <- C$train
+      D <- t(matrix(rep(Avec$train, nPolls), ncol=nPolls))
+      Avalid <- t(matrix(rep(Avec$test,nrow(C$test)),ncol=nrow(C$test)))
+    } else if(ver == 2) { # AM-AM
+      R <- C$train
+      D <- Amat$train
+      Avalid <- Amat$test
+    } else if(ver == 3) { # OV-OV
+      R <- Like$train
+      D <- t(matrix(rep(Occur$train, nPolls), ncol=nPolls)) 
+      Avalid <- t(matrix(rep(Occur$test,nrow(C$test)),ncol=nrow(C$test)))
+    } else if(ver == 4) { # OM-OM 
+      R <- Like$train
+      D <- Dislike$train
+      Avalid <- Like$test + Dislike$test
+    } else if(ver == 5) { # AM-AV
+      R <- C$train
+      D <- Amat$train
+      Avalid <- t(matrix(rep(Avec$test,nrow(C$test)),ncol=nrow(C$test)))
+    } else if(ver == 6) { # OM-AV 
+      R <- Like$train
+      D <- Dislike$train
+      Avalid <- t(matrix(rep(Avec$test,nrow(C$test)),ncol=nrow(C$test)))
+    } else if(ver == 7) { # OM-AM 
+      R <- Like$train
+      D <- Dislike$train
+      Avalid <- Amat$test
+    }
+  } else {
+    R <- mydata$R$train
+    D <- mydata$D$train
+    Avalid <- mydata$A$test
   }
   
   W <- matrix(, nrow=nPolls, ncol=nPlant)
@@ -228,7 +246,9 @@ IFMF2_Tuning <- function(mydata, k.list, lambda.list, ver, target) {
   # logistic f parameters (a1, b1, a2, b2) tuning
   x <- seq(max(C$train[P==1]))
   c_param <- GetParamList(x)
-  x <- seq(max(D[P==0]))
+  if (length(D[P==0]) > 0) {
+    x <- seq(max(D[P==0]))
+  } else { x <- 0 }
   d_param <- GetParamList(x)
 
   total <- length(c_param[[1]]) * length(c_param[[2]])
@@ -298,6 +318,7 @@ IFMF2_Tuning <- function(mydata, k.list, lambda.list, ver, target) {
     MPR.list[i] <- ValidateCommon(C$train, C$test, N$test, Avalid, pred.mat, 
                                   target)
   }
+  cat("\n")
   lambda.opt <- lambda.list[which.min(MPR.list)] 
   
   return(list(a1=opt.a1, b1=opt.b1, a2=opt.a2, b2=opt.b2, k=k.opt, 
