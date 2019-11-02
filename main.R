@@ -58,7 +58,7 @@ Validation <- function(test.y) {
   if(file.exists(filename)){
     mydata <- readRDS(paste("RData/mydata_", test.y, ".RData", sep=""))
   } else {
-    mydata = SimulateDataset(test.y)
+    mydata = UserDefinedDatasets(test.y)
     version.list = c("Sim")
   }
 
@@ -88,7 +88,7 @@ Evaluation <- function(test.y) {
   if(file.exists(filename)){
     mydata <- readRDS(filename)
   } else {
-    mydata = SimulateDataset(test.y) 
+    mydata = UserDefinedDatasets(test.y) 
     version.list = c("Sim")
   }
   
@@ -290,7 +290,7 @@ EvaluateOneYear <- function(test.year) {
 RunMyDataOneYear <- function(test.year) {
   if (test.year %in% c(11,12,13,14,15)) {
     cat(c("test.year", test.year, "\n"))
-    #SimulateDataset(test.year) # TODO
+    #UserDefinedDatasets(test.year) # TODO
     Validation(test.year)
     Evaluation(test.year)
   }
