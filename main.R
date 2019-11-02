@@ -287,7 +287,7 @@ EvaluateOneYear <- function(test.year) {
   }
 }
 
-SimulateOneYear <- function(test.year) {
+RunMyDataOneYear <- function(test.year) {
   if (test.year %in% c(11,12,13,14,15)) {
     cat(c("test.year", test.year, "\n"))
     #SimulateDataset(test.year) # TODO

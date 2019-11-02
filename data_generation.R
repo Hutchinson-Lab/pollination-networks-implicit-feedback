@@ -127,7 +127,7 @@ GetTrainTest <- function(train.years, test.year) {
 # - eval
 #   ... as same as the valid set
 # ============================================================================ #
-SimulateDataset <- function(test.y) {
+UserDefinedDatasets <- function(test.y) {
   # year configuration
   if(test.y == year.list[1]){
     valid.test.y <- tail(year.list, n=1)
